@@ -1,0 +1,69 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    /*
+      Regra padrao de seguranca:
+      qualquer colecao que nao tenha uma regra especifica abaixo fica bloqueada.
+      Isso evita liberar leitura/escrita por engano em novas colecoes.
+    */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    /*
+      Colecao usada pelo app:
+      src/app/novoCadastro.tsx salva documentos em collection(db, "tenis").
+
+      Cada documento deve pertencer a um usuario autenticado pelo campo userId.
+    */
+    match /tenis/{tenisId} {
+      /*
+        CREATE:
+        permite criar um tenis somente quando:
+        - existe usuario logado;
+        - o campo userId enviado no documento e igual ao uid do usuario logado;
+        - modelo e marca sao textos;
+        - preco e numero;
+        - createdAt existe.
+      */
+      allow create: if request.auth != null
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.modelo is string
+        && request.resource.data.marca is string
+        && request.resource.data.preco is number
+        && request.resource.data.createdAt != null;
+
+      /*
+        READ:
+        permite ler/listar apenas documentos do proprio usuario.
+        Isso protege a tela src/app/listagem.tsx para cada usuario ver so seus tenis.
+      */
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      /*
+        UPDATE:
+        permite editar apenas documentos do proprio usuario e impede trocar o dono
+        do documento, mantendo userId sempre igual ao uid autenticado.
+
+        Tambem mantem createdAt igual ao valor original, porque esse campo deve
+        representar quando o tenis foi criado, nao quando foi editado.
+      */
+      allow update: if request.auth != null
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.modelo is string
+        && request.resource.data.marca is string
+        && request.resource.data.preco is number;
+
+      /*
+        DELETE:
+        permite excluir apenas documentos do proprio usuario.
+      */
+      allow delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+    }
+  }
+}
