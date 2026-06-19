@@ -3,7 +3,7 @@ import { Input } from "@/components/Input";
 import { auth, db } from "@/lib/firebase";
 import { normalizarPreco, validarTenis } from "@/utils/validations";
 import { useRouter } from "expo-router";
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
 import { useState } from "react";
 import {
     Alert,
@@ -43,7 +43,7 @@ export default function NovoCadastro() {
                 preco: normalizarPreco(preco),
                 marca,
                 userId: user.uid,
-                createdAt: new Date()
+                createdAt: serverTimestamp()
             });
 
             Alert.alert("Sucesso", "Tênis cadastrado com sucesso!");

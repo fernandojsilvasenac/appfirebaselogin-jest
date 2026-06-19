@@ -25,14 +25,14 @@ service cloud.firestore {
         - o campo userId enviado no documento e igual ao uid do usuario logado;
         - modelo e marca sao textos;
         - preco e numero;
-        - createdAt existe.
+        - createdAt e um timestamp do Firestore.
       */
       allow create: if request.auth != null
         && request.resource.data.userId == request.auth.uid
         && request.resource.data.modelo is string
         && request.resource.data.marca is string
         && request.resource.data.preco is number
-        && request.resource.data.createdAt != null;
+        && request.resource.data.createdAt is timestamp;
 
       /*
         READ:
